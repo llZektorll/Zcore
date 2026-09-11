@@ -1,6 +1,6 @@
 {
-  "name": "obsidian-zcore-mission-control",
-  "version": "2.1.0",
+  "name": "obsidian-zcore",
+  "version": "2.2.1",
   "description": "A draggable, resizable dashboard for Obsidian vaults.",
   "main": "main.js",
   "scripts": {
@@ -14,7 +14,7 @@
     "dashboard",
     "widgets"
   ],
-  "author": "ZCore",
+  "author": "Hugo Santos",
   "license": "MIT",
   "devDependencies": {
     "builtin-modules": "3.3.0",

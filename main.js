@@ -5,20 +5,26 @@ const {
   getAllTags, moment,
 } = require('obsidian');
 
-const VIEW_TYPE = 'zcore-mission-control';
+const VIEW_TYPE = 'zcore-dashboard';
 const COLS = 12;
 
 /* ------------------------------------------------------------------ registry */
 
 const WIDGETS = {
   uplink: {
-    name: 'Vault uplink', desc: 'Headline counts for the vault.',
+    name: 'Vault uplink', desc: 'Headline counts. Every tile can be scoped on its own.',
     size: { w: 12, h: 4 },
     options: [
-      { key: 'showWords', type: 'toggle', name: 'Count words', def: true },
-      { key: 'showTasks', type: 'toggle', name: 'Count tasks', def: true },
-      { key: 'showLinks', type: 'toggle', name: 'Count links and tags', def: true },
-      { key: 'showHealth', type: 'toggle', name: 'Count orphans and unresolved links', def: true },
+      { key: 'tiles', type: 'tiles', name: 'Tiles', def: [
+        { id: 'notes', label: 'Notes', enabled: true, scopeMode: 'inherit', include: '', exclude: '' },
+        { id: 'words', label: 'Words', enabled: true, scopeMode: 'inherit', include: '', exclude: '' },
+        { id: 'links', label: 'Links', enabled: true, scopeMode: 'inherit', include: '', exclude: '' },
+        { id: 'tags', label: 'Tags', enabled: true, scopeMode: 'inherit', include: '', exclude: '' },
+        { id: 'open', label: 'Open tasks', enabled: true, scopeMode: 'inherit', include: '', exclude: '' },
+        { id: 'done', label: 'Completed', enabled: true, scopeMode: 'inherit', include: '', exclude: '' },
+        { id: 'orphans', label: 'Orphans', enabled: true, scopeMode: 'inherit', include: '', exclude: '' },
+        { id: 'unresolved', label: 'Unresolved', enabled: true, scopeMode: 'inherit', include: '', exclude: '' },
+      ] },
     ],
   },
   capture: {
@@ -149,9 +155,8 @@ function widgetDefaults(id) {
 function defaultSettings() {
   const widgets = {};
   for (const id of ORDER) widgets[id] = widgetDefaults(id);
-  widgets.capture.enabled = true;
   return {
-    title: 'ZCore Mission Control',
+    title: 'ZCore',
     dateFormat: 'dddd, D MMMM YYYY',
     scope: { mode: 'all', include: '', exclude: '' },
     ambient: true,
@@ -444,6 +449,7 @@ class WidgetModal extends Modal {
 
   renderOption(parent, opt, cfg) {
     if (opt.type === 'shortcuts') return this.renderShortcuts(parent, cfg);
+    if (opt.type === 'tiles') return this.renderTiles(parent, cfg, opt);
     const s = new Setting(parent).setName(opt.name);
     if (opt.desc) s.setDesc(opt.desc);
     const value = cfg[opt.key];
@@ -468,6 +474,53 @@ class WidgetModal extends Modal {
       );
       if (opt.type === 'folder') s.setDesc((opt.desc ? opt.desc + ' ' : '') + 'Leave empty for the vault root.');
     }
+  }
+
+  renderTiles(parent, cfg, opt) {
+    const tiles = Array.isArray(cfg.tiles) && cfg.tiles.length ? cfg.tiles : opt.def.slice();
+    cfg.tiles = tiles;
+    parent.createEl('p', {
+      cls: 'zc-modal-desc',
+      text: 'Each tile can inherit the widget scope or count a different set of folders.',
+    });
+    tiles.forEach((tile, i) => {
+      const box = parent.createDiv({ cls: 'zc-tile-cfg' });
+      const head = new Setting(box).setName(tile.label);
+      head.addToggle((t) =>
+        t.setValue(tile.enabled !== false).onChange((v) => {
+          tiles[i].enabled = v;
+          this.set('tiles', tiles);
+        })
+      );
+      head.addDropdown((d) =>
+        d
+          .addOptions({ inherit: 'Inherit widget', all: 'Whole vault', include: 'Only these', exclude: 'Except these' })
+          .setValue(tile.scopeMode || 'inherit')
+          .onChange((v) => {
+            tiles[i].scopeMode = v;
+            this.set('tiles', tiles);
+            this.onOpen();
+          })
+      );
+      if (tile.scopeMode === 'include') {
+        new Setting(box).setName('Include folders').setDesc('One per line.').addTextArea((t) => {
+          t.inputEl.rows = 2;
+          t.setValue(tile.include || '').onChange((v) => {
+            tiles[i].include = v;
+            this.set('tiles', tiles);
+          });
+        });
+      }
+      if (tile.scopeMode === 'include' || tile.scopeMode === 'exclude') {
+        new Setting(box).setName('Exclude folders').setDesc('One per line.').addTextArea((t) => {
+          t.inputEl.rows = 2;
+          t.setValue(tile.exclude || '').onChange((v) => {
+            tiles[i].exclude = v;
+            this.set('tiles', tiles);
+          });
+        });
+      }
+    });
   }
 
   renderShortcuts(parent, cfg) {
@@ -537,7 +590,7 @@ class DashboardView extends ItemView {
   }
 
   getViewType() { return VIEW_TYPE; }
-  getDisplayText() { return 'Mission Control'; }
+  getDisplayText() { return 'ZCore'; }
   getIcon() { return 'radar'; }
 
   async onOpen() {
@@ -596,7 +649,7 @@ class DashboardView extends ItemView {
     const s = this.settings();
     const title = left.createEl('button', {
       cls: 'zc-title',
-      text: s.title || 'ZCore Mission Control',
+      text: s.title || 'ZCore',
     });
     title.onclick = () => this.plugin.openSettings();
     if (s.dateFormat) {
@@ -625,6 +678,7 @@ class DashboardView extends ItemView {
     const head = card.createDiv({ cls: 'zc-card-head' });
     head.createDiv({ cls: 'zc-card-title', text: def.name });
     const tools = head.createDiv({ cls: 'zc-card-tools' });
+    const extra = tools.createDiv({ cls: 'zc-card-extra' });
     const cog = tools.createEl('button', { cls: 'zc-icon-btn zc-sm', attr: { 'aria-label': 'Widget settings' } });
     cog.setText('⚙');
     cog.onclick = (e) => {
@@ -634,7 +688,7 @@ class DashboardView extends ItemView {
     const body = card.createDiv({ cls: 'zc-card-body' });
     const handle = card.createDiv({ cls: 'zc-resize', attr: { 'aria-label': 'Resize' } });
 
-    this.cards.set(id, { card, body });
+    this.cards.set(id, { card, body, extra });
     head.addEventListener('pointerdown', (e) => this.startDrag(e, id, card, 'move'));
     handle.addEventListener('pointerdown', (e) => this.startDrag(e, id, card, 'resize'));
     return card;
@@ -748,6 +802,7 @@ class DashboardView extends ItemView {
       const entry = this.cards.get(id);
       if (!entry) continue;
       entry.body.empty();
+      entry.extra.empty();
       const cfg = this.settings().widgets[id];
       const sub = this.data.subset(this.scopeFor(id));
       try {
@@ -791,60 +846,50 @@ class DashboardView extends ItemView {
   /* ---------- widgets ---------- */
 
   w_uplink(body, d, cfg) {
-    const wrap = body.createDiv({ cls: 'zc-stats' });
-    const n = (x) => x.toLocaleString();
-    const tile = (label, value, mod) => {
-      const t = wrap.createDiv({ cls: 'zc-stat' });
-      t.createDiv({ cls: 'zc-stat-label', text: label.toUpperCase() });
-      t.createDiv({ cls: 'zc-stat-value' + (mod ? ' ' + mod : ''), text: value });
+    const tiles = Array.isArray(cfg.tiles) && cfg.tiles.length ? cfg.tiles : WIDGETS.uplink.options[0].def;
+    const base = this.scopeFor('uplink');
+    const cache = new Map();
+    const setFor = (tile) => {
+      const mode = tile.scopeMode || 'inherit';
+      if (mode === 'inherit') return d;
+      const key = mode + '|' + (tile.include || '') + '|' + (tile.exclude || '');
+      if (!cache.has(key)) {
+        cache.set(key, this.data.subset({ mode, include: tile.include, exclude: tile.exclude }));
+      }
+      return cache.get(key);
     };
-    tile('Notes', n(d.files.length));
-    if (cfg.showWords !== false) tile('Words', n(d.words));
-    if (cfg.showLinks !== false) {
-      tile('Links', n(d.links));
-      tile('Tags', n(d.tagCounts.size));
-    }
-    if (cfg.showTasks !== false) {
-      tile('Open tasks', n(d.openTasks), d.openTasks ? 'is-warn' : 'is-good');
-      tile('Completed', n(d.doneTasks), 'is-good');
-    }
-    if (cfg.showHealth !== false) {
-      tile('Orphans', n(d.orphans.length));
-      tile('Unresolved', n(d.unresolvedCount));
-    }
-  }
+    void base;
 
-  w_capture(body, d, cfg) {
-    const target = cfg.target || 'Inbox.md';
-    this.sub(body, 'appends to ' + target);
-    const ta = body.createEl('textarea', {
-      cls: 'zc-input',
-      attr: { rows: '3', placeholder: 'Write, then press Ctrl/Cmd + Enter' },
-    });
-    const row = body.createDiv({ cls: 'zc-row' });
-    const label = row.createEl('label', { cls: 'zc-check' });
-    const cb = label.createEl('input', { attr: { type: 'checkbox' } });
-    cb.checked = cfg.prefix === 'task';
-    label.createSpan({ text: 'as task' });
-    const save = row.createEl('button', { cls: 'zc-btn zc-btn-gold', text: 'Save' });
-    const commit = async () => {
-      const text = ta.value.trim();
-      if (!text) return;
-      const prefix = cb.checked ? '- [ ] ' : cfg.prefix === 'bullet' ? '- ' : '';
-      const stamp = cfg.timestamp ? moment().format('HH:mm') + ' ' : '';
-      const lines = text.split('\n').map((l, i) => (i === 0 ? prefix + stamp + l : prefix ? '  ' + l : l));
-      await this.plugin.appendTo(target, lines.join('\n'), cfg.openAfter === true);
-      ta.value = '';
-      new Notice('Captured to ' + target);
-      this.queueRefresh();
-    };
-    save.onclick = commit;
-    ta.onkeydown = (e) => {
-      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault();
-        commit();
+    const value = (id, s) => {
+      switch (id) {
+        case 'notes': return [s.files.length, ''];
+        case 'words': return [s.words, ''];
+        case 'links': return [s.links, ''];
+        case 'tags': return [s.tagCounts.size, ''];
+        case 'open': return [s.openTasks, s.openTasks ? 'is-warn' : 'is-good'];
+        case 'done': return [s.doneTasks, 'is-good'];
+        case 'orphans': return [s.orphans.length, ''];
+        case 'unresolved': return [s.unresolvedCount, ''];
+        default: return [0, ''];
       }
     };
+
+    const wrap = body.createDiv({ cls: 'zc-stats' });
+    let shown = 0;
+    for (const tile of tiles) {
+      if (tile.enabled === false) continue;
+      shown++;
+      const s = setFor(tile);
+      const [n, mod] = value(tile.id, s);
+      const el = wrap.createDiv({ cls: 'zc-stat' });
+      const label = el.createDiv({ cls: 'zc-stat-label', text: tile.label.toUpperCase() });
+      if ((tile.scopeMode || 'inherit') !== 'inherit') {
+        label.createSpan({ cls: 'zc-stat-scope', text: '◆' });
+        el.setAttr('aria-label', 'Custom scope');
+      }
+      el.createDiv({ cls: 'zc-stat-value' + (mod ? ' ' + mod : ''), text: Number(n).toLocaleString() });
+    }
+    if (!shown) this.none(body, 'ALL TILES HIDDEN');
   }
 
   w_pomodoro(body, d, cfg) {
@@ -1095,6 +1140,24 @@ class DashboardView extends ItemView {
   }
 
   w_heatmap(body, d, cfg) {
+    const entry = this.cards.get('heatmap');
+    if (entry) {
+      const seg = entry.extra.createDiv({ cls: 'zc-seg' });
+      const mk = (key, label) => {
+        const b = seg.createEl('button', {
+          cls: 'zc-seg-btn' + ((cfg.source || 'mtime') === key ? ' is-on' : ''),
+          text: label,
+        });
+        b.onclick = (e) => {
+          e.stopPropagation();
+          cfg.source = key;
+          this.plugin.saveQuiet();
+          this.refreshData();
+        };
+      };
+      mk('mtime', 'Modified');
+      mk('ctime', 'Created');
+    }
     const weeks = cfg.weeks || 26;
     const counts = this.dayCounts(d.files, cfg.source);
     const end = moment().endOf('isoWeek');
@@ -1342,13 +1405,18 @@ class SettingsTab extends PluginSettingTab {
 
 module.exports = class ZCorePlugin extends Plugin {
   async onload() {
-    await this.loadSettings();
+    try {
+      await this.loadSettings();
+    } catch (err) {
+      console.error('[ZCore] settings failed to load, using defaults', err);
+      this.settings = defaultSettings();
+    }
 
     this.pomo = { phase: 'work', remaining: (this.settings.widgets.pomodoro.work || 25) * 60, running: false, done: 0 };
     this.registerInterval(window.setInterval(() => this.pomoStep(), 1000));
 
     this.registerView(VIEW_TYPE, (leaf) => new DashboardView(leaf, this));
-    this.addRibbonIcon('radar', 'ZCore Mission Control', () => this.activate());
+    this.addRibbonIcon('radar', 'ZCore', () => this.activate());
     this.addSettingTab(new SettingsTab(this.app, this));
 
     this.addCommand({ id: 'open', name: 'Open dashboard', callback: () => this.activate() });
@@ -1385,6 +1453,10 @@ module.exports = class ZCorePlugin extends Plugin {
     await this.saveData(this.settings);
     window.clearTimeout(this._saveT);
     this._saveT = window.setTimeout(() => this.views().forEach((v) => v.rebuild()), 350);
+  }
+
+  async saveQuiet() {
+    await this.saveData(this.settings);
   }
 
   views() {

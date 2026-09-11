@@ -1,4 +1,4 @@
-/* ZCore Mission Control — dashboard view styles.
+/* ZCore — dashboard view styles.
    Uses ZCore theme tokens when available, Obsidian defaults otherwise. */
 
 .zcore-view .view-content {
@@ -11,6 +11,7 @@
   --zc-b: var(--zc-blue, #6fa8d6);
   --zc-panel-bg: var(--zc-panel, var(--background-secondary));
   --zc-hair: var(--zc-line, var(--background-modifier-border));
+  --zc-green: #6cc39a;
   --zc-mono-f: var(--font-monospace, monospace);
   --zc-disp-f: var(--font-interface);
   position: relative;
@@ -36,13 +37,27 @@
 /* header */
 
 .zc-head {
+  position: relative;
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 16px;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2px;
   padding-bottom: 14px;
   margin-bottom: 16px;
   border-bottom: 1px solid var(--zc-hair);
+}
+
+.zc-head > div:first-child {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.zc-head > .zc-icon-btn {
+  position: absolute;
+  right: 0;
+  top: 0;
 }
 
 button.zc-title {
@@ -59,6 +74,10 @@ button.zc-title {
   text-align: left;
 }
 
+button.zc-title {
+  text-align: center;
+}
+
 button.zc-title:hover {
   background: none;
   text-decoration: underline;
@@ -70,7 +89,7 @@ button.zc-title:hover {
   font-family: var(--zc-mono-f);
   font-size: 10px;
   letter-spacing: 1.4px;
-  color: var(--text-faint);
+  color: var(--zc-green, #6cc39a);
   margin-top: 4px;
 }
 
@@ -187,8 +206,44 @@ button.zc-title:hover {
 
 .zc-card-tools {
   display: flex;
-  gap: 4px;
+  align-items: center;
+  gap: 6px;
   flex: 0 0 auto;
+}
+
+.zc-card-extra:empty {
+  display: none;
+}
+
+.zc-seg {
+  display: flex;
+  border: 1px solid var(--zc-hair);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.zc-seg-btn {
+  font-family: var(--zc-mono-f);
+  font-size: 9px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  padding: 4px 9px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-faint);
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.zc-seg-btn:hover {
+  color: var(--text-normal);
+  background: var(--background-modifier-hover);
+}
+
+.zc-seg-btn.is-on {
+  background: color-mix(in oklab, var(--zc-g) 22%, transparent);
+  color: var(--zc-g);
 }
 
 .zc-card-body {
@@ -283,6 +338,13 @@ button.zc-title:hover {
   font-size: 20px;
   font-weight: 600;
   margin-top: 2px;
+}
+
+.zc-stat-scope {
+  margin-left: 5px;
+  font-size: 7px;
+  color: var(--zc-b);
+  vertical-align: middle;
 }
 
 .zc-stat-value.is-warn { color: #e0794f; }
@@ -594,6 +656,8 @@ button.zc-title:hover {
 .zc-pomo {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  text-align: center;
   gap: 10px;
   height: 100%;
 }
@@ -624,6 +688,7 @@ button.zc-title:hover {
 }
 
 .zc-pomo-track {
+  width: 100%;
   height: 5px;
   border-radius: 3px;
   background: var(--background-modifier-form-field);
@@ -644,6 +709,7 @@ button.zc-title:hover {
 .zc-pomo-dots {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
 }
 
@@ -670,6 +736,8 @@ button.zc-title:hover {
 
 .zc-pomo-controls {
   display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
   gap: 6px;
   margin-top: auto;
 }
@@ -839,4 +907,16 @@ button.zc-title:hover {
   color: var(--text-muted);
   font-size: 13px;
   margin-top: -6px;
+}
+
+.zc-modal .zc-tile-cfg {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  padding: 0 12px;
+  margin-bottom: 8px;
+}
+
+.zc-modal .zc-tile-cfg .setting-item {
+  border-top: none;
+  padding: 10px 0;
 }

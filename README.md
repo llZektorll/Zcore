@@ -1,10 +1,10 @@
-# ZCore Mission Control
+# ZCore
 
 A dashboard for your Obsidian vault. Every panel is a widget you can drag,
 resize and scope to specific folders. Nothing else is required — no Dataview,
 no Templater, no Homepage.
 
-![grid](https://raw.githubusercontent.com/zcore/obsidian-zcore-mission-control/main/docs/screenshot.png)
+![grid](https://raw.githubusercontent.com/hugosantos/obsidian-zcore/main/docs/screenshot.png)
 
 ## Widgets
 
@@ -52,7 +52,7 @@ Two levels:
   the dashboard still covers the vault.
 
 Open a widget's own settings with the gear on its title bar, or from
-*Settings → ZCore Mission Control → Widgets → Configure*.
+*Settings → ZCore → Widgets → Configure*.
 
 ## Commands
 
@@ -64,12 +64,12 @@ Open a widget's own settings with the gear on its title bar, or from
 
 ### From the community list
 
-Settings → Community plugins → Browse → search for *ZCore Mission Control*.
+Settings → Community plugins → Browse → search for *ZCore*.
 
 ### Manually
 
 Copy `main.js`, `manifest.json` and `styles.css` into
-`<vault>/.obsidian/plugins/zcore-mission-control/`, then enable the plugin.
+`<vault>/.obsidian/plugins/zcore/`, then enable the plugin.
 
 ## Development
 
@@ -82,7 +82,7 @@ npm run build   # minifies src/main.js into main.js
 ```
 
 To work against a live vault, symlink or copy the repo folder into
-`<vault>/.obsidian/plugins/zcore-mission-control/` and use *Reload app without
+`<vault>/.obsidian/plugins/zcore/` and use *Reload app without
 saving* after each change.
 
 ## Releasing
@@ -98,9 +98,13 @@ git push --follow-tags
 
 ## Companion theme
 
-The optional **ZCore Mission Control** theme provides the gold-and-blue palette
+The optional **ZCore** theme provides the gold-and-blue palette
 this dashboard was designed against. Without it, the plugin falls back to the
 current theme's variables and still looks native.
+
+## Author
+
+Hugo Santos
 
 ## License
 
